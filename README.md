@@ -1,4 +1,4 @@
-# Laporan Proyek Machine Learning - Nama Anda
+# Laporan Proyek Machine Learning - Nathanael Dennis Gunawan
 
 ## Project Overview
 
@@ -55,17 +55,48 @@ Tujuan: Mengubah data teks menjadi representasi numerik yang dapat dianalisis se
 Tujuan: Memberikan rekomendasi smartphone yang paling mirip berdasarkan fitur teks model, membantu pengguna menemukan alternatif smartphone yang relevan dengan preferensi mereka  
 
 ## Data Understanding
-Paragraf awal bagian ini menjelaskan informasi mengenai jumlah data, kondisi data, dan informasi mengenai data yang digunakan. Sertakan juga sumber atau tautan untuk mengunduh dataset. Contoh: [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/Restaurant+%26+consumer+data).
+Dataset yang digunakan dalam proyek ini berasal dari Kaggle. Dataset ini berisi informasi lengkap tentang berbagai jenis smartphone, termasuk fitur teknis seperti brand, model, sistem operasi, memori, kamera, baterai, harga, serta data rating dan profil pengguna  
+- **URL/Tautan Sumber Data** 
+Dataset yang digunakan dalam proyek ini dapat diunduh melalui link ini: https://www.kaggle.com/datasets/meirnizri/cellphones-recommendations?select=cellphones+data.csv  
+- **Jumlah Baris dan Kolom**
+Dataset yang digunakan total adalah 3 dataset yang tujuan utamanya adalah untuk membuat sistem rekomendasi pemilihan cellphone, yaitu:  
+	- Cellphone.csv: dataset ini terdiri dari 33 baris data dan 14 kolom yang berisi mengenai brand, model, os, dan lainnya 
+ 	- Rating.csv: dataset ini terdiri dari 990 baris data dan 3 kolom yang berisi rating semua pengguna
+  	- User.csv: dataset ini terdiri dari 99 baris data dan 4 kolom yang berisi umur, jenis kelamin dan pekerjaan
+- **Kondisi Data**
+	- Missing Value: Terdapat 10 data missing value pada kolom occupation
+	- Duplikat: Tidak terdapat duplikasi baris data
 
-Selanjutnya, uraikanlah seluruh variabel atau fitur pada data. Sebagai contoh:  
+**Variabel-variabel dalam dataset adalah sebagai berikut:**
+- cellphone_id : Kode unik yang mengidentifikasi setiap smartphone dalam dataset
+- brand : Merek atau produsen smartphone 
+- model : Nama atau tipe model smartphone 
+- operating system : Sistem operasi yang digunakan smartphone 
+- internal memory : Kapasitas penyimpanan internal smartphone dalam gigabyte (GB)
+- RAM : Memori akses acak yang tersedia pada smartphone, dalam GB, mempengaruhi kecepatan pemrosesan
+- performance : Ukuran atau skor performa smartphone 
+- main camera : Spesifikasi kamera utama smartphone, biasanya dalam megapiksel (MP)
+- selfie camera : Spesifikasi kamera depan/swatch smartphone, dalam MP
+- battery size : Kapasitas baterai smartphone dalam milliampere-hour (mAh)
+- screen size : Ukuran layar smartphone dalam inci
+- weight : Berat smartphone dalam gram (g)
+- price : Harga smartphone, biasanya dalam satuan mata uang tertentu (dalam dollar)
+- release date : Tanggal atau tahun rilis smartphone
+- user_id : Kode unik yang mengidentifikasi pengguna atau reviewer dalam dataset
+- rating : Nilai rating yang diberikan pengguna terhadap smartphone (1-10)
+- age : Usia pengguna dalam tahun
+- gender : Jenis kelamin pengguna (Male/Female)
+- occupation : Pekerjaan atau profesi pengguna
 
-Variabel-variabel pada Restaurant UCI dataset adalah sebagai berikut:
-- accepts : merupakan jenis pembayaran yang diterima pada restoran tertentu.
-- cuisine : merupakan jenis masakan yang disajikan pada restoran.
-- dst
-
-**Rubrik/Kriteria Tambahan (Opsional)**:
-- Melakukan beberapa tahapan yang diperlukan untuk memahami data, contohnya teknik visualisasi data beserta insight atau exploratory data analysis.
+### **Tahapan**
+- Exploratory Data Analysis (EDA)
+	- Mengecek struktur data (info()), jumlah unik cellphone_id, daftar brand, sistem operasi (operating system), serta rentang harga. Sehingga dapat diketahui brand yang tersedia dan variasi harga produk
+	- Melihat ringkasan statistik (describe()), total rating, dan jumlah user serta produk yang diberi rating. Sehingga dapat diketahui distribusi rating
+	- Terakhir, mengecek dimensi data user untuk melihat ukuran populasi user dan informasi demografis dasar. Sehingga dapat diketahui persebaran umur, gender dan pekerjaan pengguna
+- Data Pre-processing
+	- Menggabungkan cellphone_id dari beberapa tabel, menghapus duplikat, dan menyatukan data rating, cellphone, dan user menjadi satu dataframe lengkap (merged_data)
+	- Menggunakan .isnull().sum() untuk mengecek nilai hilang, serta groupby() untuk melihat total rating per cellphone
+	- Menggabungkan data rating, nama model, dan data user menjadi all_cellphone sebagai dasar sistem rekomendasi 
 
 ## Data Preparation
 Pada bagian ini Anda menerapkan dan menyebutkan teknik data preparation yang dilakukan. Teknik yang digunakan pada notebook dan laporan harus berurutan.
