@@ -99,29 +99,82 @@ Dataset yang digunakan total adalah 3 dataset yang tujuan utamanya adalah untuk 
 	- Menggabungkan data rating, nama model, dan data user menjadi all_cellphone sebagai dasar sistem rekomendasi 
 
 ## Data Preparation
-Pada bagian ini Anda menerapkan dan menyebutkan teknik data preparation yang dilakukan. Teknik yang digunakan pada notebook dan laporan harus berurutan.
-
-**Rubrik/Kriteria Tambahan (Opsional)**: 
-- Menjelaskan proses data preparation yang dilakukan
-- Menjelaskan alasan mengapa diperlukan tahapan data preparation tersebut.
+Dalam tahap Data Preparation ini, dilakukan beberapa proses penting untuk memastikan data siap digunakan dalam analisis atau pemodelan Machine Learning. Dataset yang telah dimuat kemudian diperiksa untuk memastikan tidak terdapat nilai kosong (missing value) dan semua tipe data sesuai dengan karakteristik masing-masing fitur  
+- Pada all_cellphone ditemukan 10 nilai kosong pada fitur occupation. Nilai-nilai kosong ini diatasi dengan menghapus baris yang mengandung missing value menggunakan metode `dropna()`, karena proporsinya tidak signifikan terhadap keseluruhan data  
+Alasan: Menghindari error dalam proses transformasi atau pelatihan model akibat missing value atau tipe data yang tidak sesuai  
+- Data diurutkan berdasarkan cellphone_id secara ascending untuk memastikan urutan yang konsisten dan memudahkan proses verifikasi serta pelacakan data di tahap selanjutnya  
+Alasan: Mengurutkan data membantu memastikan keteraturan visual dan memudahkan proses debugging, pelacakan data, serta pencocokan antar data ketika dilakukan proses merge atau indexing pada tahap analisis lanjutan  
+- Mengecek primary key sesuai kategori seperti mengecek jumlah primary key di dataset all_cellphone, jumlah brand yang unik. Hal ini membantu dalam proses encoding jika diperlukan pada tahap modeling lebih lanjut
+Alasan: Mengecek keunikan data pada kolom seperti cellphone_id atau user_id memastikan bahwa tidak ada entri ganda yang tidak disengaja. Agar tidak terjadi redudansi
+- Membuat variabel preparation yang berisi dataframe fix_cellphone dan diurutkan berdasarkan cellphone_id. (Jelaskan)
+Alasan: Variabel preparation disiapkan sebagai versi bersih dan siap pakai dari data, yang menyimpan informasi dasar cellphone. Ini memudahkan akses data untuk kebutuhan modelling seperti pembuatan sistem rekomendasi content based filtering. Urutan berdasarkan cellphone_id juga menjaga konsistensi  
+- Dilakukan pengecekan terhadap duplikasi data berdasarkan fitur unik yaitu `cellphone_id`. Duplikat yang terdeteksi dihapus untuk memastikan setiap entri mewakili satu produk yang unik dan menghindari bias pada analisis  
+Alasan: Data duplikat dapat menyebabkan distorsi pada hasil analisis atau pelatihan model, karena informasi yang sama dihitung lebih dari sekali. Dengan memastikan bahwa setiap cellphone_id unik, maka setiap model cellphone hanya direpresentasikan satu kali
+- Fitur-fitur penting seperti `cellphone_id`, `brand`, dan `model` dipisahkan dan diubah ke dalam bentuk list, kemudian dikemas ulang dalam bentuk DataFrame baru dengan struktur yang lebih ringkas dan sesuai kebutuhan analisis  
+Alasan: Pemisahan dan pembentukan ulang ini membuat data lebih modular dan siap digunakan untuk representasi input dalam model, misalnya untuk proses text vectorization dalam content-based filtering
+- Membuat dictionary yang disimpan dalam cellphone_new untuk data cellphone_id menjadi id, cellphone_brand menjadi brand, cellphone_model menjadi model
+Alasan: Pemberian nama ulang kolom dilakukan untuk menyederhanakan struktur data, meningkatkan keterbacaan, dan menyesuaikan dengan format yang diperlukan pada tahap modeling selanjutnya, seperti saat membuat rekomendasi berbasis TF-IDF dan cosine similarity
+Seluruh tahapan ini dilakukan untuk memastikan bahwa data yang digunakan dalam analisis sudah bersih dari error, duplikat, dan inkonsistensi. Data yang telah melalui tahap preparation ini menjadi dasar yang kuat untuk tahapan berikutnya yaitu modeling
 
 ## Modeling
-Tahapan ini membahas mengenai model sisten rekomendasi yang Anda buat untuk menyelesaikan permasalahan. Sajikan top-N recommendation sebagai output.
+Pada tahap Modeling ini, dilakukan pembangunan sistem rekomendasi yang dapat menyarankan smartphone (cellphone) berdasarkan kemiripan model. Dalam proyek ini digunakan pendekatan Content-Based Filtering, yang merekomendasikan item berdasarkan kemiripan kontennya
 
-**Rubrik/Kriteria Tambahan (Opsional)**: 
-- Menyajikan dua solusi rekomendasi dengan algoritma yang berbeda.
-- Menjelaskan kelebihan dan kekurangan dari solusi/pendekatan yang dipilih.
+#### TF-IDF Vectorizer  
+Langkah awal dalam membuat sistem rekomendasi content based filtering ialah mengubah teks dari kolom model model menjadi representasi numerik menggunakan TF-IDF. Tujuannya adalah untuk memberi bobot lebih pada kata unik di setiap model cellphone
+
+- TfidfVectorizer() digunakan untuk mentransformasi kolom model menjadi matriks vektor
+- Hasil transformasi ini berupa matriks TF-IDF yang mewakili seberapa penting kata tertentu dalam nama model terhadap keseluruhan dataset  
+
+#### Cosine Similarity
+Setelah didapat representasi vektor dari tiap nama model, sekarang dihitung cosine similarity antar vektor. Nilai cosine similarity menunjukkan tingkat kemiripan antar model, dengan nilai mendekati 1 berarti sangat mirip  
+
+- Hasil similarity ini disimpan dalam bentuk matriks yang digunakan sebagai dasar untuk mencari model lain yang paling mirip dengan suatu brand/model tertentu
+
+#### Content-Based Filtering
+Pada tahap ini dibuat fungsi cellphone_recommendations() yang berfungsi untuk mencari dan mengembalikan daftar rekomendasi smartphone yang paling mirip berdasarkan cosine similarity dari nama brand dan model yang sudah ditransformasi
+Langkah langkah dalam fungsi cellphone_recommendations() adalah berikut:  
+
+- Mengambil nilai kemiripan dari brand yang dipilih terhadap semua brand lain berdasarkan cosine similarity
+- Mencari indeks dari brand yang memiliki nilai kemiripan tertingggi lalu memilih k brand terdekat dengan brand tersebut
+- Brand yang sama dengan input akan dihapus dari daftar hasil agar tidak direkomendasikan ke dirinya sendiri
+- fungsi menggabungkan brand yang direkomendasikan dengan data items (berisi brand dan model), dan menampilkan k hasil teratas sebagai rekomendasi
+ 
+#### Top-N Recommendation
+Fungsi cellphone_recommendations() dibuat untuk menghasilkan rekomendasi berdasarkan Top-N kemiripan.
+- Input: nama brand, dan jumlah rekomendasi k  
+- Output: daftar 5 brand dan model yang paling mirip dengan brand yang dipilih, berdasarkan nilai cosine similarity tertinggi
+- Contoh hasil rekomendasi untuk ‘Samsung’:
+	- Brand: Apple
+  	- Model: iPhone SE (2022), iPhone 13 Mini, iPhone 13, iPhone 13 Pro, iPhone 13 Pro Max 
+
+#### Kelebihan dan Kekurangan Content-Based Filtering
+- Kelebihan
+	- Tidak bergantung pada user: Content-based filtering dapat digunakan bahkan jika tidak ada data pengguna 
+	- Memanfaatkan atribut produk: Rekomendasi tetap dapat dibuat berdasarkan informasi model tanpa perlu rating eksplisit
+- Kekurangan:
+	- Terbatas pada informasi yang tersedia: Hanya mempertimbangkan kemiripan dari data fitur (misalnya nama model), bukan preferensi pengguna
+	- Kurang variasi: Cenderung merekomendasikan item yang sangat mirip, kurang eksploratif dibanding collaborative filtering
 
 ## Evaluation
-Pada bagian ini Anda perlu menyebutkan metrik evaluasi yang digunakan. Kemudian, jelaskan hasil proyek berdasarkan metrik evaluasi tersebut.
 
-Ingatlah, metrik evaluasi yang digunakan harus sesuai dengan konteks data, problem statement, dan solusi yang diinginkan.
+#### Metrik Evaluasi Yang Digunakan 
+- **Cosine Similarity**  
+Dalam proyek sistem rekomendasi ini, metrik evaluasi yang digunakan adalah cosine similarity, yang berfungsi untuk mengukur tingkat kemiripan antara dua item (dalam hal ini model cellphone) berdasarkan representasi vektor dari fitur model menggunakan TF-IDF
 
-**Rubrik/Kriteria Tambahan (Opsional)**: 
-- Menjelaskan formula metrik dan bagaimana metrik tersebut bekerja.
+Dalam konteks proyek ini, solusi yang diinginkan adalah memberikan rekomendasi smartphone yang mirip berdasarkan fitur model-nya. Karena pendekatan yang digunakan adalah Content-Based Filtering, maka metrik evaluasi yang paling sesuai adalah:
+
+- Cosine Similarity, karena:
+	- Data yang digunakan berupa teks (model) yang sudah ditransformasi ke bentuk vektor melalui TF-IDF
+	- Tujuan utama sistem adalah mengukur kemiripan antar smartphone berdasarkan konten/model
+	- Cosine similarity mengukur sudut antara dua vektor dan memberikan nilai dari 0 (tidak mirip) hingga 1 (sangat mirip), sehingga cocok untuk sistem rekomendasi berbasis deskripsi
+
+#### Hasil Evaluasi
+Hasil evaluasi menunjukkan bahwa sistem mampu memberikan rekomendasi cellphone yang secara tekstual modelnya paling mirip dengan brand yang dicari. Misalnya, ketika pengguna mencari "Samsung", sistem merekomendasikan beberapa model dari brand "Apple" dengan struktur nama model yang mirip, menunjukkan bahwa model ini berhasil menangkap kemiripan berdasarkan nama produk
+
+- Contoh hasil rekomendasi untuk ‘Samsung’:
+	- **Brand**: Apple
+  	- **Model Yang Direkomendasikan**: iPhone SE (2022), iPhone 13 Mini, iPhone 13, iPhone 13 Pro, iPhone 13 Pro Max 
+
+Meskipun pendekatan ini cukup efektif dalam mengidentifikasi kemiripan berbasis teks, perlu dicatat bahwa metrik ini tidak mempertimbangkan preferensi pengguna atau performa teknis dari smartphone. Oleh karena itu, pendekatan ini cocok untuk tahap awal eksplorasi sistem rekomendasi berbasis konten, namun bisa dikembangkan lebih lanjut dengan menggabungkan data rating atau fitur numerik untuk hasil yang lebih akurat  
 
 **---Ini adalah bagian akhir laporan---**
-
-_Catatan:_
-- _Anda dapat menambahkan gambar, kode, atau tabel ke dalam laporan jika diperlukan. Temukan caranya pada contoh dokumen markdown di situs editor [Dillinger](https://dillinger.io/), [Github Guides: Mastering markdown](https://guides.github.com/features/mastering-markdown/), atau sumber lain di internet. Semangat!_
-- Jika terdapat penjelasan yang harus menyertakan code snippet, tuliskan dengan sewajarnya. Tidak perlu menuliskan keseluruhan kode project, cukup bagian yang ingin dijelaskan saja.
