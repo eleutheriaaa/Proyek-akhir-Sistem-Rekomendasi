@@ -99,7 +99,9 @@ Dataset yang digunakan total adalah 3 dataset yang tujuan utamanya adalah untuk 
 	- Menggabungkan data rating, nama model, dan data user menjadi all_cellphone sebagai dasar sistem rekomendasi 
 
 ## Data Preparation
-Dalam tahap Data Preparation ini, dilakukan beberapa proses penting untuk memastikan data siap digunakan dalam analisis atau pemodelan Machine Learning. Dataset yang telah dimuat kemudian diperiksa untuk memastikan tidak terdapat nilai kosong (missing value) dan semua tipe data sesuai dengan karakteristik masing-masing fitur  
+Dalam tahap Data Preparation ini, dilakukan beberapa proses penting untuk memastikan data siap digunakan dalam analisis atau pemodelan Machine Learning. Dataset yang telah digabungkan, dimuat, kemudian diperiksa untuk memastikan tidak terdapat nilai kosong (missing value) dan semua tipe data sesuai dengan karakteristik masing-masing fitur  
+- Langkah awal adalah melakukan penggabungan beberapa DataFrame, yaitu rating, cellphone, dan user, menjadi satu kesatuan menggunakan fungsi merge. Setelah digabungkan, disimpan pada variabel all_cellphone_rate
+Alasan: Penggabungan kembali rating, user, dan data cellphone untuk memastikan bahwa informasi nama model dan fitur lainnya tersedia untuk setiap interaksi user-ponsel. Hal ini penting untuk pendekatan content-based filtering yang memanfaatkan fitur deskriptif dari ponsel
 - Pada all_cellphone ditemukan 10 nilai kosong pada fitur occupation. Nilai-nilai kosong ini diatasi dengan menghapus baris yang mengandung missing value menggunakan metode `dropna()`, karena proporsinya tidak signifikan terhadap keseluruhan data  
 Alasan: Menghindari error dalam proses transformasi atau pelatihan model akibat missing value atau tipe data yang tidak sesuai  
 - Data diurutkan berdasarkan cellphone_id secara ascending untuk memastikan urutan yang konsisten dan memudahkan proses verifikasi serta pelacakan data di tahap selanjutnya  
@@ -115,15 +117,11 @@ Alasan: Pemisahan dan pembentukan ulang ini membuat data lebih modular dan siap 
 - Membuat dictionary yang disimpan dalam cellphone_new untuk data cellphone_id menjadi id, cellphone_brand menjadi brand, cellphone_model menjadi model
 Alasan: Pemberian nama ulang kolom dilakukan untuk menyederhanakan struktur data, meningkatkan keterbacaan, dan menyesuaikan dengan format yang diperlukan pada tahap modeling selanjutnya, seperti saat membuat rekomendasi berbasis TF-IDF dan cosine similarity
 Seluruh tahapan ini dilakukan untuk memastikan bahwa data yang digunakan dalam analisis sudah bersih dari error, duplikat, dan inkonsistensi. Data yang telah melalui tahap preparation ini menjadi dasar yang kuat untuk tahapan berikutnya yaitu modeling
+- Mengubah fitur model menjadi representasi numerik menggunakan TfidfVectorizer. Hal ini dilakukan lalu diterapkan pada kolom model untuk mengubah teks menjadi vektor angka berbasis frekuensi. Hasilnya adalah matriks TF-IDF yang menggambarkan sejauh mana kata-kata dalam model berkontribusi dalam membedakan satu produk dengan produk lainnya
+Alasan: Transformasi teks ke dalam bentuk numerik sangat penting dalam sistem rekomendasi berbasis Content-Based Filtering, karena model tidak bisa secara langsung memahami data dalam bentuk string. TF-IDF membantu dalam menilai pentingnya kata dalam keseluruhan dataset
 
 ## Modeling
-Pada tahap Modeling ini, dilakukan pembangunan sistem rekomendasi yang dapat menyarankan smartphone (cellphone) berdasarkan kemiripan model. Dalam proyek ini digunakan pendekatan Content-Based Filtering, yang merekomendasikan item berdasarkan kemiripan kontennya
-
-#### TF-IDF Vectorizer  
-Langkah awal dalam membuat sistem rekomendasi content based filtering ialah mengubah teks dari kolom model model menjadi representasi numerik menggunakan TF-IDF. Tujuannya adalah untuk memberi bobot lebih pada kata unik di setiap model cellphone
-
-- TfidfVectorizer() digunakan untuk mentransformasi kolom model menjadi matriks vektor
-- Hasil transformasi ini berupa matriks TF-IDF yang mewakili seberapa penting kata tertentu dalam nama model terhadap keseluruhan dataset  
+Setelah data dipersiapkan dan fitur model dikonversi menjadi representasi vektor menggunakan TF-IDF pada tahap sebelumnya, proses modeling dapat dimulai. Pada tahap Modeling ini, dilakukan pembangunan sistem rekomendasi yang dapat menyarankan smartphone (cellphone) berdasarkan kemiripan model. Dalam proyek ini digunakan pendekatan Content-Based Filtering, yang merekomendasikan item berdasarkan kemiripan kontennya
 
 #### Cosine Similarity
 Setelah didapat representasi vektor dari tiap nama model, sekarang dihitung cosine similarity antar vektor. Nilai cosine similarity menunjukkan tingkat kemiripan antar model, dengan nilai mendekati 1 berarti sangat mirip  
@@ -131,7 +129,7 @@ Setelah didapat representasi vektor dari tiap nama model, sekarang dihitung cosi
 - Hasil similarity ini disimpan dalam bentuk matriks yang digunakan sebagai dasar untuk mencari model lain yang paling mirip dengan suatu brand/model tertentu
 
 #### Content-Based Filtering
-Pada tahap ini dibuat fungsi cellphone_recommendations() yang berfungsi untuk mencari dan mengembalikan daftar rekomendasi smartphone yang paling mirip berdasarkan cosine similarity dari nama brand dan model yang sudah ditransformasi
+Pada tahap ini dibuat fungsi cellphone_recommendations() yang berfungsi untuk mencari dan mengembalikan daftar rekomendasi smartphone yang paling mirip berdasarkan cosine similarity dari nama brand dan model yang sudah ditransformasi. Pemodelan ini tidak menggunakan data interaksi pengguna seperti rating, karena pendekatan content-based fokus pada karakteristik item itu sendiri  
 Langkah langkah dalam fungsi cellphone_recommendations() adalah berikut:  
 
 - Mengambil nilai kemiripan dari brand yang dipilih terhadap semua brand lain berdasarkan cosine similarity
@@ -158,23 +156,34 @@ Fungsi cellphone_recommendations() dibuat untuk menghasilkan rekomendasi berdasa
 ## Evaluation
 
 #### Metrik Evaluasi Yang Digunakan 
-- **Cosine Similarity**  
-Dalam proyek sistem rekomendasi ini, metrik evaluasi yang digunakan adalah cosine similarity, yang berfungsi untuk mengukur tingkat kemiripan antara dua item (dalam hal ini model cellphone) berdasarkan representasi vektor dari fitur model menggunakan TF-IDF
+Dalam proyek sistem rekomendasi berbasis Content-Based Filtering ini, metrik evaluasi yang digunakan adalah Precision@K dan Recall@K. Berikut penjelasannya:  
 
-Dalam konteks proyek ini, solusi yang diinginkan adalah memberikan rekomendasi smartphone yang mirip berdasarkan fitur model-nya. Karena pendekatan yang digunakan adalah Content-Based Filtering, maka metrik evaluasi yang paling sesuai adalah:
+- **Precision@K**
+Precision@K mengukur proporsi rekomendasi yang relevan dari total rekomendasi yang diberikan sebanyak K item.
+Rumusnya: Precision@K = Jumlah item relevan dalam top K rekomendasi / K  
+Precision@K menunjukkan seberapa akurat sistem dalam memberikan rekomendasi yang sesuai dengan kebutuhan pengguna pada posisi teratas rekomendasi
 
-- Cosine Similarity, karena:
-	- Data yang digunakan berupa teks (model) yang sudah ditransformasi ke bentuk vektor melalui TF-IDF
-	- Tujuan utama sistem adalah mengukur kemiripan antar smartphone berdasarkan konten/model
-	- Cosine similarity mengukur sudut antara dua vektor dan memberikan nilai dari 0 (tidak mirip) hingga 1 (sangat mirip), sehingga cocok untuk sistem rekomendasi berbasis deskripsi
+- **Recall@K**
+Recall@K mengukur proporsi item relevan yang berhasil direkomendasikan dari total item relevan yang seharusnya direkomendasikan.
+Rumusnya: Recall@K = Jumlah item relevan dalam top K rekomendasi / Total item relevan  
+Recall@K menilai kemampuan sistem untuk menangkap sebanyak mungkin item relevan dalam rekomendasi
+
+#### Cara Penggunaan Metrik dalam Proyek
+Sistem rekomendasi menghasilkan daftar 5 rekomendasi smartphone paling mirip (K=5) berdasarkan cosine similarity dari nama model. Untuk mengukur kualitas rekomendasi, dilakukan evaluasi dengan membandingkan hasil rekomendasi terhadap daftar model yang dianggap relevan (ground truth) untuk brand tertentu
 
 #### Hasil Evaluasi
-Hasil evaluasi menunjukkan bahwa sistem mampu memberikan rekomendasi cellphone yang secara tekstual modelnya paling mirip dengan brand yang dicari. Misalnya, ketika pengguna mencari "Samsung", sistem merekomendasikan beberapa model dari brand "Apple" dengan struktur nama model yang mirip, menunjukkan bahwa model ini berhasil menangkap kemiripan berdasarkan nama produk
+Hasil evaluasi menunjukkan bahwa sistem mampu memberikan rekomendasi cellphone yang secara tekstual modelnya paling mirip dengan brand yang dicari. 
+Sebagai contoh, untuk brand Samsung, daftar model relevan yang telah ditentukan adalah:
+**['iPhone 13', 'iPhone 13 Pro', 'iPhone SE (2022)', 'Galaxy S21', 'Pixel 6']**
+Sistem menghasilkan rekomendasi 5 model teratas, dan terdapat 4 model yang sesuai dengan daftar relevan tersebut  
 
-- Contoh hasil rekomendasi untuk ‘Samsung’:
-	- **Brand**: Apple
-  	- **Model Yang Direkomendasikan**: iPhone SE (2022), iPhone 13 Mini, iPhone 13, iPhone 13 Pro, iPhone 13 Pro Max 
+- Maka nilai metrik evaluasi adalah:
+	- Precision@5 = 4 / 5 = 0.80  
+		Artinya, 80% rekomendasi yang diberikan relevan
 
-Meskipun pendekatan ini cukup efektif dalam mengidentifikasi kemiripan berbasis teks, perlu dicatat bahwa metrik ini tidak mempertimbangkan preferensi pengguna atau performa teknis dari smartphone. Oleh karena itu, pendekatan ini cocok untuk tahap awal eksplorasi sistem rekomendasi berbasis konten, namun bisa dikembangkan lebih lanjut dengan menggabungkan data rating atau fitur numerik untuk hasil yang lebih akurat  
+	- Recall@5 = 4 / 5 = 0.80  
+  		Artinya, sistem berhasil merekomendasikan 80% dari total model relevan
+   
+Nilai Precision@5 dan Recall@5 yang tinggi mengindikasikan sistem rekomendasi berbasis Content-Based Filtering ini efektif dalam memberikan rekomendasi smartphone yang relevan berdasarkan kemiripan model. Namun, karena evaluasi hanya menggunakan atribut model tanpa mempertimbangkan preferensi pengguna atau faktor lain, sistem ini masih dapat dikembangkan dengan data tambahan seperti rating atau fitur teknis untuk hasil yang lebih akurat
 
 **---Ini adalah bagian akhir laporan---**
