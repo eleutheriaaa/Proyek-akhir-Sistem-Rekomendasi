@@ -100,8 +100,10 @@ Dataset yang digunakan total adalah 3 dataset yang tujuan utamanya adalah untuk 
 
 ## Data Preparation
 Dalam tahap Data Preparation ini, dilakukan beberapa proses penting untuk memastikan data siap digunakan dalam analisis atau pemodelan Machine Learning. Dataset yang telah digabungkan, dimuat, kemudian diperiksa untuk memastikan tidak terdapat nilai kosong (missing value) dan semua tipe data sesuai dengan karakteristik masing-masing fitur  
-- Langkah awal adalah melakukan penggabungan beberapa DataFrame, yaitu rating, cellphone, dan user, menjadi satu kesatuan menggunakan fungsi merge. Setelah digabungkan, disimpan pada variabel all_cellphone_rate
-Alasan: Penggabungan kembali rating, user, dan data cellphone untuk memastikan bahwa informasi nama model dan fitur lainnya tersedia untuk setiap interaksi user-ponsel. Hal ini penting untuk pendekatan content-based filtering yang memanfaatkan fitur deskriptif dari ponsel
+- Langkah awal adalah melakukan penggabungan beberapa dataset ID unik dari cellphone dan rating menggunakan fungsi np.concatenate() dan np.unique() yang disimpan pada variabel cellphone_all. Tujuannya untuk memastikan semua cellphone_id yang terdapat di kedua dataset tersebut tercakup dalam analisis. Proses serupa juga dilakukan untuk user_id dengan menggabungkan rating.user_id dan user.user_id, hasilnya disimpan dalam user_all  
+Alasan: Penggabungan dan penyaringan ID unik ini penting untuk mengetahui cakupan data dan memastikan tidak ada ID yang terlewatkan, sehingga data yang digunakan sudah lengkap untuk analisis berikutnya
+- Selanjutnya, dilakukan penggabungan (merge) antara DataFrame rating dengan cellphone berdasarkan cellphone_id, kemudian hasilnya digabungkan kembali dengan DataFrame user berdasarkan user_id. Hasil akhir penggabungan ini disimpan dalam variabel merged_data (atau disebut juga all_cellphone_rate atau all_cellphone)  
+Alasan: Penggabungan ini dilakukan agar setiap interaksi rating yang dilakukan pengguna memiliki informasi lengkap mengenai model ponsel dan detail pengguna. Ini sangat penting untuk pendekatan content-based filtering yang menggunakan fitur deskriptif ponsel dan profil pengguna  
 - Pada all_cellphone ditemukan 10 nilai kosong pada fitur occupation. Nilai-nilai kosong ini diatasi dengan menghapus baris yang mengandung missing value menggunakan metode `dropna()`, karena proporsinya tidak signifikan terhadap keseluruhan data  
 Alasan: Menghindari error dalam proses transformasi atau pelatihan model akibat missing value atau tipe data yang tidak sesuai  
 - Data diurutkan berdasarkan cellphone_id secara ascending untuk memastikan urutan yang konsisten dan memudahkan proses verifikasi serta pelacakan data di tahap selanjutnya  
@@ -173,17 +175,17 @@ Sistem rekomendasi menghasilkan daftar 5 rekomendasi smartphone paling mirip (K=
 
 #### Hasil Evaluasi
 Hasil evaluasi menunjukkan bahwa sistem mampu memberikan rekomendasi cellphone yang secara tekstual modelnya paling mirip dengan brand yang dicari. 
-Sebagai contoh, untuk brand Samsung, daftar model relevan yang telah ditentukan adalah:
-**['iPhone 13', 'iPhone 13 Pro', 'iPhone SE (2022)', 'Galaxy S21', 'Pixel 6']**
+Sebagai contoh, untuk brand Samsung, daftar model relevan yang telah ditentukan adalah:  
+**['Galaxy A13', 'Galaxy A32', 'Galaxy A53', 'Galaxy S22', 'Galaxy S22 Plus']**  
 Sistem menghasilkan rekomendasi 5 model teratas, dan terdapat 4 model yang sesuai dengan daftar relevan tersebut  
 
 - Maka nilai metrik evaluasi adalah:
-	- Precision@5 = 4 / 5 = 0.80  
-		Artinya, 80% rekomendasi yang diberikan relevan
+	- Precision@5 = 0 / 5 = 0.00  
+		Artinya, Tidak ada satupun dari 5 rekomendasi yang termasuk produk Samsung  
 
-	- Recall@5 = 4 / 5 = 0.80  
-  		Artinya, sistem berhasil merekomendasikan 80% dari total model relevan
+	- Recall@5 = 0 / 5 = 0.00  
+  		Dari 8 produk Samsung yang seharusnya bisa direkomendasikan, tidak ada satupun yang muncul  
    
-Nilai Precision@5 dan Recall@5 yang tinggi mengindikasikan sistem rekomendasi berbasis Content-Based Filtering ini efektif dalam memberikan rekomendasi smartphone yang relevan berdasarkan kemiripan model. Namun, karena evaluasi hanya menggunakan atribut model tanpa mempertimbangkan preferensi pengguna atau faktor lain, sistem ini masih dapat dikembangkan dengan data tambahan seperti rating atau fitur teknis untuk hasil yang lebih akurat
+Nilai Precision@5 dan Recall@5 yang sama-sama 0.00 menunjukkan bahwa sistem rekomendasi belum berhasil memberikan rekomendasi yang relevan untuk brand Samsung. Hal ini mengindikasikan bahwa pendekatan Content-Based Filtering yang digunakan saat ini belum efektif, terutama karena hanya mempertimbangkan atribut model tanpa memperhatikan kesamaan brand atau preferensi pengguna. Untuk meningkatkan akurasi dan relevansi rekomendasi, sistem dapat dikembangkan lebih lanjut dengan menambahkan atribut seperti brand, rating, atau spesifikasi teknis sebagai bagian dari fitur pemodelan  
 
 **---Ini adalah bagian akhir laporan---**
